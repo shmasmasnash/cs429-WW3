@@ -4,9 +4,10 @@ using System.Text.RegularExpressions;
 
 public class Game
 {
-    private const string Commands = @"help|end|mv|quit|print";
+    private const string Commands = @"help|end|mv|quit|print|capture";
     private static readonly Regex Command = new Regex(@"(" + Commands + @")");
     private static readonly Regex Move = new Regex(@"mv (\d+) (\d+),(\d+)");
+    private static readonly Regex Capture = new Regex(@"capture (\d+)");
     private readonly World world;
     private int currentPlayer;
     private List<Player> players;
@@ -89,6 +90,39 @@ public class Game
                     else
                     {
                         Console.WriteLine("Command must match: mv [0-9]+ [0-9]+,[0-9]+");
+                    }
+                }
+                else if (match.Value == "capture")
+                {
+                    var capture = Capture.Match(input);
+                    if (capture.Success)
+                    {
+                        var index = int.Parse(capture.Groups[1].Value);
+
+                        var player = players[currentPlayer];
+
+                        if (player.ArmyExists(index))
+                        {
+                            var armyPosition = player.ArmyPosition(index);
+                            var armyProvince = world.GetProvinceAt(armyPosition);
+                            if (armyProvince.Owner != player)
+                            {
+                                armyProvince.Owner = player;
+                                Console.WriteLine("Territory captured");
+                            }
+                            else
+                            {
+                                Console.WriteLine("Territory already controlled");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Invalid Army Index");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Command must match: capture [0-9]+");
                     }
                 }
                 else if (match.Value == "quit")

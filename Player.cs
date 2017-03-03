@@ -31,6 +31,23 @@ public class Player
         return true;
     }
 
+    public bool ArmyExists(int armyId)
+    {
+        if (armyId >= ArmyList.Count)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    public Pos ArmyPosition(int armyId)
+    {
+        return ArmyList[armyId].Position;
+    }
+
     public void MoveArmy(int armyId, Pos toPos)
     {
         ArmyList[armyId].Position = toPos;
