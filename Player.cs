@@ -6,11 +6,14 @@ public class Player
     {
         ArmyList = new List<Army>();
         Color = c;
+        Resources = new ResourceBag();
     }
 
     public List<Army> ArmyList { get; private set; }
 
     public Color Color { get; set; }
+
+    public ResourceBag Resources { get; private set; }
 
     public void AddArmy(Army army)
     {
@@ -46,6 +49,17 @@ public class Player
         }
     }
 
+    public bool FeedArmy(int armyId, int foodAmount)
+    {
+        if (!Resources.Use(ResourceType.Food, foodAmount) || armyId >= ArmyList.Count)
+        {
+            return false;
+        }
+
+        ArmyList[armyId].FeedArmy(foodAmount);
+        return true;
+    }
+
     public Pos ArmyPosition(int armyId)
     {
         return ArmyList[armyId].Position;
@@ -71,5 +85,10 @@ public class Player
             Color.Use();
             army.Render();
         }
+    }
+
+    public string ResourcesString()
+    {
+        return Resources.ToString();
     }
 }

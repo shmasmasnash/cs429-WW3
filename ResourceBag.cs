@@ -58,4 +58,17 @@ public class ResourceBag
 
         this.SetAmountOf(resourceType, this.GetAmountOf(resourceType) + amount);
     }
+
+    public void Add(ResourceBag other)
+    {
+        foreach (ResourceType resourceType in Enum.GetValues(typeof(ResourceType)))
+        {
+            this.SetAmountOf(resourceType, this.GetAmountOf(resourceType) + other.GetAmountOf(resourceType));
+        }
+    }
+
+    public override string ToString()
+    {
+        return "Food: " + this.GetAmountOf(ResourceType.Food) + " Weapons: " + this.GetAmountOf(ResourceType.Weapons);
+    }
 }
