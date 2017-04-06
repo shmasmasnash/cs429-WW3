@@ -6,12 +6,24 @@ using OpenTK.Input;
 
 public class Window : GameWindow
 {
+    public static readonly int HUDPIXELHEIGHT = 100;
+
     private Game game;
+
+    private double centerX;
+
+    private double centerY;
+
+    // scale = pixels per world square
+    private double scale;
 
     public Window(int width, int height, Game game)
         : base(width, height, GraphicsMode.Default, "WW3")
     {
         this.game = game;
+        scale = 15;
+        centerX = World.WIDTH / 2;
+        centerY = World.HEIGHT / 2;
         VSync = VSyncMode.On;
     }
 
@@ -88,6 +100,7 @@ public class Window : GameWindow
 
     protected override void OnResize(EventArgs e)
     {
+        /*
         base.OnResize(e);
 
         GL.Viewport(ClientRectangle.X, ClientRectangle.Y, ClientRectangle.Width, ClientRectangle.Height);
@@ -95,6 +108,7 @@ public class Window : GameWindow
         GL.MatrixMode(MatrixMode.Projection);
         GL.LoadIdentity();
         GL.Ortho(0.0, World.WIDTH, 0.0, World.HEIGHT, 1.0, -1.0);
+        */
     }
 
     protected override void OnUpdateFrame(FrameEventArgs e)
@@ -112,6 +126,15 @@ public class Window : GameWindow
     {
         base.OnRenderFrame(e);
 
+        var left = centerX - (ClientRectangle.Width / 2 / scale);
+        var right = centerX + (ClientRectangle.Width / 2 / scale);
+        var bottom = centerY - ((ClientRectangle.Height - HUDPIXELHEIGHT) / 2 / scale);
+        var top = centerY + ((ClientRectangle.Height - HUDPIXELHEIGHT) / 2 / scale);
+        GL.Viewport(0, HUDPIXELHEIGHT, ClientRectangle.Width, ClientRectangle.Height - HUDPIXELHEIGHT);
+        GL.MatrixMode(MatrixMode.Projection);
+        GL.LoadIdentity();
+        GL.Ortho(left, right, bottom, top, 1.0, -1.0);
+
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
         World world = game.World;
@@ -123,7 +146,17 @@ public class Window : GameWindow
             {
                 Render(army);
             }
+
+            // RenderResources(player.ResourcesString())
         }
+
+        // render HUD
+        GL.Viewport(0, 0, ClientRectangle.Width, HUDPIXELHEIGHT);
+        GL.MatrixMode(MatrixMode.Projection);
+        GL.LoadIdentity();
+        GL.Ortho(0.0, ClientRectangle.Width, 0.0, HUDPIXELHEIGHT, 1, -1);
+        GL.Color3(0.2, 0.2, 0.2);
+        GL.Rect(0, 0, ClientRectangle.Width, HUDPIXELHEIGHT);
 
         SwapBuffers();
     }
