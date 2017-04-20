@@ -1,4 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp1.1</TargetFramework>
@@ -12,6 +13,7 @@
     <PackageReference Include="MSTest.TestFramework" Version="1.1.14" />
     <PackageReference Include="OpenTK.NETCore" Version="1.1.2571.6431" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.0.1" />
+    <PackageReference Include="CoreCompat.System.Drawing" Version="1.0.0-beta006"/>
     <None Include="maps.csv" CopyToOutputDirectory="Always" />
   </ItemGroup>
 </Project>

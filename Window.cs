@@ -1,4 +1,6 @@
 using System;
+using System.Drawing;
+using System.Drawing.Imaging;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
@@ -10,6 +12,14 @@ public class Window : GameWindow
     public static readonly Color BACKGROUND = new Color(0.5f, 0.5f, 0.5f);
     public static readonly Color HUDBACKGROUND = new Color(0.09375f, 0.27f, 0.4f);
     public static readonly int BORDER = 2;
+    private static string fontBitmapFilename = "font.bmp";
+    private static int glyphsPerLine = 16;
+
+    // private static int GlyphLineCount = 16;
+    private static int glyphWidth = 11;
+    private static int glyphHeight = 22;
+
+    private static int charXSpacing = 11;
     private Game game;
     private int playerID;
     private Army army;
@@ -18,7 +28,18 @@ public class Window : GameWindow
     private float centerX;
     private float centerY;
     private float scale; // scale = pixels per world square
+    private int fontTextureID;
+    private int textureWidth;
+    private int textureHeight;
 
+    // private static string Text = "GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);";
+
+    // Used to offset rendering glyphs to bitmap
+    // private static int AtlasOffsetX = -3, AtlassOffsetY = -1;
+    // private static int FontSize = 14;
+    // private static bool BitmapFont = false;
+    // private static string FromFile; //= "joystix monospace.ttf";
+    // private static string FontName = "Consolas";
     public Window(int width, int height, Game game)
         : base(width, height, GraphicsMode.Default, "WW3")
     {
@@ -27,6 +48,50 @@ public class Window : GameWindow
         centerX = World.WIDTH / 2;
         centerY = World.HEIGHT / 2;
         VSync = VSyncMode.On;
+    }
+
+    public void DrawText(int x, int y, string text)
+    {
+        GL.Enable(EnableCap.Texture2D);
+        GL.Begin(PrimitiveType.Quads);
+
+        float u_step = (float)glyphWidth / (float)textureWidth;
+        float v_step = (float)glyphHeight / (float)textureHeight;
+
+        for (int n = 0; n < text.Length; n++)
+        {
+            char idx = text[n];
+            float u = (float)(idx % glyphsPerLine) * u_step;
+            float v = (float)(idx / glyphsPerLine) * v_step;
+
+            GL.TexCoord2(u, v + v_step);
+            GL.Vertex2(x, y);
+            GL.TexCoord2(u + u_step, v + v_step);
+            GL.Vertex2(x + glyphWidth, y);
+            GL.TexCoord2(u + u_step, v);
+            GL.Vertex2(x + glyphWidth, y + glyphHeight);
+            GL.TexCoord2(u, v);
+            GL.Vertex2(x, y + glyphHeight);
+
+            x += charXSpacing;
+        }
+
+        GL.End();
+        GL.Disable(EnableCap.Texture2D);
+    }
+
+    public void Blt(double x, double y, double width, double height)
+    {
+        GL.Begin(PrimitiveType.Quads);
+        GL.TexCoord2(0, 0);
+        GL.Vertex2(x, y);
+        GL.TexCoord2(1, 0);
+        GL.Vertex2(x + width, y);
+        GL.TexCoord2(1, 1);
+        GL.Vertex2(x + width, y + height);
+        GL.TexCoord2(0, 1);
+        GL.Vertex2(x, y + height);
+        GL.End();
     }
 
     public void Render(Army army)
@@ -200,9 +265,72 @@ public class Window : GameWindow
         return centerY + ((Height - HUDPIXELHEIGHT) / 2 / scale);
     }
 
+    /*private void RenderBitmap()
+    {
+        //GL.ClearColor(Color.MidnightBlue);
+        GL.Enable(EnableCap.Texture2D);
+
+        GL.Hint(HintTarget.PerspectiveCorrectionHint, HintMode.Nicest);
+
+        GL.GenTextures(1, out texture);
+        GL.BindTexture(TextureTarget.Texture2D, texture);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+
+        int width = 800;
+        int height = 600;
+        byte[, ,] data = new byte[height, width, 3];
+
+        for (int y = 0; y < height; y++)
+           {
+           for (int x = 0; x < width; x++)
+              {
+              for(int channel = 0; channel < 3; channel++)
+                 {
+                 data[y, x, channel] = 254;
+                 }
+              }
+           }
+
+        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, width, height, 0,
+            OpenTK.Graphics.OpenGL.PixelFormat.Bgr, PixelType.UnsignedByte, data);
+    }*/
+
+    /*private void InitializeTextRendering()
+    {
+        //GL.Ortho(0, controlWidth, 0, controlHeight, -1000, 1000);
+        //GL.Scale(1, -1, 1); // I work with a top/left image and openGL is bottom/left
+        //GL.Viewport(0, 0, controlWidth, controlHeight);
+        //GL.ClearColor(Color.White);
+        GL.Hint(HintTarget.PointSmoothHint, HintMode.Nicest);
+        GL.Hint(HintTarget.LineSmoothHint, HintMode.Nicest);
+        GL.BlendFunc(BlendingFactorSrc.One, BlendingFactorDest.OneMinusSrcAlpha);
+        GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
+        GL.PolygonMode(MaterialFace.Front, PolygonMode.Line);
+        GL.Enable(EnableCap.PointSmooth);
+        GL.Enable(EnableCap.LineSmooth);
+        GL.Enable(EnableCap.Blend);
+        GL.Enable(EnableCap.DepthTest);
+        GL.ShadeModel(ShadingModel.Smooth);
+        GL.Enable(EnableCap.AutoNormal);
+
+        var bmp = new Bitmap(width, height);
+        var gfx = Graphics.FromImage(bmp);
+        gfx.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+
+        var texture = GL.GenTexture();
+        GL.BindTexture(TextureTarget.Texture2D, texture);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, bmp.Width, bmp.Height, 0,
+        OpenTK.Graphics.OpenGL.PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
+    }*/
+
     protected override void OnLoad(EventArgs e)
     {
         base.OnLoad(e);
+        fontTextureID = LoadTexture(fontBitmapFilename);
+        GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
     }
 
     protected override void OnResize(EventArgs e)
@@ -253,6 +381,8 @@ public class Window : GameWindow
         // render HUD
         RenderHUD(world);
 
+        // lol
+        // DrawText(0, 0, "HELLO WORLD");
         SwapBuffers();
     }
 
@@ -348,6 +478,23 @@ public class Window : GameWindow
         {
             game.AdvancePlayer();
             Console.WriteLine("Ended turn");
+        }
+    }
+
+    private int LoadTexture(string filename)
+    {
+        using (var bitmap = new System.Drawing.Bitmap(filename))
+        {
+            var texId = GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2D, fontTextureID);
+            System.Drawing.Imaging.BitmapData data = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, bitmap.PixelFormat);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, bitmap.Width, bitmap.Height, 0, OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
+            bitmap.UnlockBits(data);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+            textureWidth = bitmap.Width;
+            textureHeight = bitmap.Height;
+            return texId;
         }
     }
 }
