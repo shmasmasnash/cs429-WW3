@@ -45,7 +45,14 @@ public class World
 
     public Province GetProvinceAt(Pos pos)
     {
-        return provinceGrid[pos.X, pos.Y];
+        if (pos.X >= 0 && pos.X < provinceGrid.GetLength(0) && pos.Y >= 0 && pos.Y < provinceGrid.GetLength(1))
+        {
+            return provinceGrid[pos.X, pos.Y];
+        }
+        else
+        {
+            return null;
+        }
     }
 
     public void Tick()

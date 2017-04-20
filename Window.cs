@@ -52,6 +52,7 @@ public class Window : GameWindow
 
     public void DrawText(int x, int y, string text)
     {
+        GL.Enable(EnableCap.Blend);
         GL.Enable(EnableCap.Texture2D);
         GL.Begin(PrimitiveType.Quads);
 
@@ -78,6 +79,7 @@ public class Window : GameWindow
 
         GL.End();
         GL.Disable(EnableCap.Texture2D);
+        GL.Disable(EnableCap.Blend);
     }
 
     public void Blt(double x, double y, double width, double height)
@@ -201,10 +203,19 @@ public class Window : GameWindow
         HUDBACKGROUND.Use();
         GL.Rect(0, 0, Width, HUDPIXELHEIGHT);
 
+        // draw Make Army button
+        Color.BLUE.Use();
+        GL.Rect((Width / 2) - 100, 30, Width / 2, 60);
+        Color.WHITE.Use();
+        DrawText((Width / 2) - 100, 35, "Make Army");
+
         RenderHealth();
 
+        Color.WHITE.Use();
+        DrawText(0, 0, "Current Player: " + (game.CurrentPlayerIndex + 1));
+
         // render province info
-        world.GetProvinceAt(pos);
+        Province selectedProvince = world.GetProvinceAt(pos);
         int food = 5;
         int weapons = 12;
         var right = Width;
@@ -216,6 +227,11 @@ public class Window : GameWindow
         int weaponsSideNum = (int)Math.Sqrt(weapons) + 1;
         float foodSize = squareSize / foodSideNum;
         float weaponSize = squareSize / weaponsSideNum;
+        if (selectedProvince != null && selectedProvince.City != null)
+        {
+            Color.WHITE.Use();
+            DrawText((Width / 2) + 200, 30, selectedProvince.City?.Name);
+        }
 
         // food
         Color.BLACK.Use();
@@ -243,6 +259,10 @@ public class Window : GameWindow
             var y2 = squareY + ((i / weaponsSideNum) * weaponSize);
             GL.Rect(x2 + 1, y2 + 1, x2 + weaponSize - 1, y2 + weaponSize - 1);
         }
+
+        // text
+        Color.WHITE.Use();
+        DrawText(right - 350, 30, "Resources");
     }
 
     public float GetLeft()
@@ -331,6 +351,8 @@ public class Window : GameWindow
         base.OnLoad(e);
         fontTextureID = LoadTexture(fontBitmapFilename);
         GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
+        GL.BlendFunc(BlendingFactorSrc.One, BlendingFactorDest.OneMinusSrcAlpha);
+        GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
     }
 
     protected override void OnResize(EventArgs e)
@@ -401,6 +423,7 @@ public class Window : GameWindow
         float worldX = left + (((float)mouseX / Width) * (right - left));
         float worldY = bottom + (((float)(mouseY - HUDPIXELHEIGHT) / (Height - HUDPIXELHEIGHT)) * (top - bottom));
 
+        // GL.Rect((Width / 2) - 100, 30, Width / 2, 60);
         int x = (int)worldX;
         int y = (int)worldY;
         Console.WriteLine("x is: " + x + " y is: " + y);
@@ -408,12 +431,19 @@ public class Window : GameWindow
         if (clickFlag == 0)
         {
             playerID = game.CurrentPlayerIndex;
+            Pos prevPos = new Pos(pos.X, pos.Y);
             pos = new Pos(x, y);
             army = game.Manager.ArmyAt(pos);
             if (army != null)
             {
                 Console.WriteLine("Army clicked.");
                 clickFlag = 1;
+            }
+            else if (mouseX >= (Width / 2) - 100 && mouseX <= Width / 2 && mouseY >= 30 && mouseY <= 60)
+            {
+                pos = new Pos(prevPos.X, prevPos.Y);
+                Console.WriteLine("Army created.");
+                player.AddArmy(new Army(10), pos);
             }
             else
             {
